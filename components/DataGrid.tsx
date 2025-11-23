@@ -1,6 +1,5 @@
 'use client';
-
-import DataGrid from 'react-data-grid';
+import RDG from 'react-data-grid';           // renamed import
 import 'react-data-grid/lib/styles.css';
 
 const columns = [
@@ -46,7 +45,7 @@ const columns = [
 
 export function DataGrid({ data }: { data: any[] }) {
   return (
-    <DataGrid
+    <RDG
       columns={columns}
       rows={data}
       rowKeyGetter={(row) => row.id}
