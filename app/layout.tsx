@@ -1,19 +1,23 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
+import type { Metadata } from "next";
+import "./globals.css";
+import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
-  title: 'Excelm - Returns Tracker',
-  description: 'TSV to FedEx to Smart Sheet',
+  title: "Excelm Returns Tracker",
+  description: "TSV upload + FedEx tracking + Excel-like grid",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        {children}
+      <body className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <ThemeProvider attribute="class" defaultTheme="light">
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
