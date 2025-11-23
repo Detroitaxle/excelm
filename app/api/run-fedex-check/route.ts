@@ -24,27 +24,37 @@ async function callFedEx(trackingId: string): Promise<any> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { batchSize = 200 } = await req.json();
-    const { data: rows } = await supabase.from('orders_from_tsv').select('id, tracking_id').limit(batchSize);
+    const { batchSize = 200, rowIds } = await req.json();
+    
+    // If rowIds provided, only check those rows, otherwise check all
+    let query = supabase.from('orders_from_tsv').select('id, tracking_id');
+    
+    if (rowIds && Array.isArray(rowIds) && rowIds.length > 0) {
+      query = query.in('id', rowIds);
+    } else {
+      query = query.limit(batchSize);
+    }
+    
+    const { data: rows } = await query;
 
-    const results = await Promise.all(rows.map(({ tracking_id }) => limit(async () => {
+    if (!rows || rows.length === 0) {
+      return NextResponse.json({ message: 'No rows to check', results: [] });
+    }
+
+    const results = await Promise.all(rows.map(({ id, tracking_id }) => limit(async () => {
       try {
         const fedexData = await callFedEx(tracking_id);
+        // Always update the status, don't delete rows
+        await supabase.from('orders_from_tsv').update({ fedex_status: fedexData }).eq('id', id);
         const delivered = await isDelivered(fedexData);
-        if (delivered) {
-          await supabase.from('orders_from_tsv').update({ fedex_status: fedexData }).eq('tracking_id', tracking_id);
-          return { tracking_id, status: 'kept', kept: true };
-        } else {
-          await supabase.from('orders_from_tsv').delete().eq('tracking_id', tracking_id);
-          return { tracking_id, status: 'deleted', kept: false };
-        }
+        return { id, tracking_id, status: delivered ? 'delivered' : 'not_delivered', success: true };
       } catch (error) {
-        await supabase.from('orders_from_tsv').update({ fedex_status: { error: (error as Error).message } }).eq('tracking_id', tracking_id);
-        return { tracking_id, status: 'error', kept: true };
+        await supabase.from('orders_from_tsv').update({ fedex_status: { error: (error as Error).message } }).eq('id', id);
+        return { id, tracking_id, status: 'error', success: false, error: (error as Error).message };
       }
     })));
 
-    return NextResponse.json(results);
+    return NextResponse.json({ message: `Checked ${results.length} rows`, results });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }

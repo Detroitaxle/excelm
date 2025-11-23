@@ -18,9 +18,26 @@ export default function Home() {
     },
   });
 
-  const runFedexCheck = async () => {
-    await fetch('/api/fedex-check', { method: 'POST' });
+  const runFedexCheck = async (rowIds?: number[]) => {
+    const body = rowIds && rowIds.length > 0 
+      ? { rowIds } 
+      : { batchSize: 200 };
+    await fetch('/api/run-fedex-check', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(body) 
+    });
     refetch();
+  };
+
+  const handleDeleteRows = async (ids: number[]) => {
+    await Promise.all(ids.map(id => 
+      fetch(`/api/orders/${id}`, { method: 'DELETE' })
+    ));
+  };
+
+  const handleRunFedExCheckOnSelected = async (ids: number[]) => {
+    await runFedexCheck(ids);
   };
 
   return (
@@ -60,14 +77,20 @@ export default function Home() {
             Upload a TSV to get started.
           </p>
         ) : (
-          <DataGrid data={rows} />
+          <DataGrid 
+            data={rows} 
+            onDeleteRows={handleDeleteRows} 
+            onRefetch={refetch}
+            onRunFedExCheck={handleRunFedExCheckOnSelected}
+          />
         )}
       </div>
 
-      <div className="mt-6 flex gap-6 justify-center text-sm">
-        <span className="flex items-center gap-2"><div className="w-4 h-4 bg-brown-500 rounded"></div>No wh</span>
+      <div className="mt-6 flex gap-6 justify-center text-sm flex-wrap">
+        <span className="flex items-center gap-2"><div className="w-4 h-4 bg-amber-500 rounded"></div>No wh</span>
         <span className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded"></div>Refunded</span>
         <span className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded"></div>Closed</span>
+        <span className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-500 rounded"></div>Replacement Requested</span>
         <span className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded"></div>Hold</span>
       </div>
 
