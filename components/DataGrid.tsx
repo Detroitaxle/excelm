@@ -1,42 +1,57 @@
 'use client';
-import { useState } from 'react';
+
 import DataGrid from 'react-data-grid';
+import 'react-data-grid/lib/styles.css';
 
 const columns = [
-  { key: 'selection', name: '', width: 50, frozen: true },
   { key: 'order_id', name: 'Order ID', width: 120 },
-  { key: 'order_date', name: 'Order Date', width: 120 },
-  { key: 'return_request_date', name: 'Return Request Date', width: 140 },
-  { key: 'label_cost', name: 'Label Cost', width: 100 },
-  { key: 'return_carrier', name: 'Return Carrier', width: 120 },
-  { key: 'tracking_id', name: 'Tracking ID', width: 140 },
-  { key: 'merchant_sku', name: 'Merchant SKU', width: 120 },
-  { key: 'order_amount', name: 'Order Amount', width: 120 },
-  { key: 'fedex_status', name: 'FedEx Info', width: 150 },
-  { key: 'manual_status', name: 'Manual Action', width: 120, editable: true },
+  { key: 'order_date', name: 'Order Date', width: 110 },
+  { key: 'return_request_date', name: 'Return Date', width: 110 },
+  { key: 'label_cost', name: 'Label Cost', width: 90 },
+  { key: 'return_carrier', name: 'Carrier', width: 100 },
+  { key: 'tracking_id', name: 'Tracking ID', width: 150 },
+  { key: 'merchant_sku', name: 'SKU', width: 120 },
+  { key: 'order_amount', name: 'Amount', width: 100 },
+  { key: 'fedex_status', name: 'FedEx Status', width: 200 },
+  {
+    key: 'manual_status',
+    name: 'Manual Action',
+    width: 140,
+    editable: true,
+    editor: ({ row, onRowChange }: any) => (
+      <select
+        value={row.manual_status || ''}
+        onChange={(e) => onRowChange({ ...row, manual_status: e.target.value })}
+        className="w-full px-2 py-1"
+      >
+        <option value="">—</option>
+        <option value="No wh">No wh</option>
+        <option value="Refunded">Refunded</option>
+        <option value="Closed">Closed</option>
+        <option value="Hold">Hold</option>
+      </select>
+    ),
+    formatter: ({ row }: any) => {
+      const colors: any = {
+        'No wh': 'bg-brown-500',
+        'Refunded': 'bg-green-500',
+        'Closed': 'bg-red-500',
+        'Hold': 'bg-orange-500',
+      };
+      const color = colors[row.manual_status] || 'bg-gray-300';
+      return <div className={`w-full text-center text-white py-1 rounded ${color}`}>{row.manual_status || '—'}</div>;
+    }
+  },
 ];
 
 export function DataGrid({ data }: { data: any[] }) {
-  const [rows, setRows] = useState(data);
-
-  const getRowClass = (row: any) => {
-    switch (row.manual_status) {
-      case 'No wh': return 'bg-amber-100 dark:bg-amber-900';
-      case 'Refunded': return 'bg-green-100 dark:bg-green-900';
-      case 'Closed': return 'bg-red-100 dark:bg-red-900';
-      case 'Hold': return 'bg-orange-100 dark:bg-orange-900';
-      default: return '';
-    }
-  };
-
   return (
     <DataGrid
       columns={columns}
-      rows={rows}
-      onRowsChange={setRows}
-      rowClass={(row) => getRowClass(row)}
-      defaultColumnOptions={{ resizable: true, sortable: true }}
-      enableVirtualization
+      rows={data}
+      rowKeyGetter={(row) => row.id}
+      className="rdg-light"
+      style={{ height: 'calc(100vh - 300px)' }}
     />
   );
 }
